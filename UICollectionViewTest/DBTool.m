@@ -8,6 +8,8 @@
 
 #import "DBTool.h"
 #import <FMResultSet.h>
+#import "YTKKeyValueStore.h"
+#import <MJExtension.h>
 
 @interface DBTool ()
 {
@@ -26,9 +28,50 @@
     static dispatch_once_t OnceToken;
     dispatch_once(&OnceToken, ^{
         manager = [[DBTool alloc]init];
+        
     });
     return manager;
 }
+
+- (void)createTableWithName:(NSString *)name {
+    YTKKeyValueStore *manager = [[YTKKeyValueStore alloc]initDBWithName:@"TEST.db"];
+    [manager createTableWithName:name];
+}
+
+- (void)newInsertAModel:(JJBaseModel *)model {
+    NSDictionary *infoDic = model.mj_keyValues;
+    [self createTableWithName:model.titleName];
+    NSMutableArray *tempArray = [[NSMutableArray alloc]initWithCapacity:0];
+    [tempArray addObjectsFromArray:[self getSavedModelWithTableName:model.titleName]];
+    [tempArray addObject:infoDic];
+    YTKKeyValueStore *manager = [[YTKKeyValueStore alloc]initDBWithName:@"TEST.db"];
+    for (int i=0 ;i < tempArray.count;i ++) {
+        [manager putObject:tempArray[i] withId:[NSString stringWithFormat:@"%d",i] intoTable:model.titleName];
+    }
+}
+
+
+
+- (NSArray *)getSavedModelWithTableName:(NSString *)name {
+    YTKKeyValueStore *manager = [[YTKKeyValueStore alloc]initDBWithName:@"TEST.db"];
+    [manager createTableWithName:name];
+    NSArray *tempArray = [manager getAllItemsFromTable:name];
+    NSMutableArray *valueArray = [[NSMutableArray alloc]initWithCapacity:0];
+    for (YTKKeyValueItem *item in tempArray) {
+        [valueArray addObject:item.itemObject];
+    }
+    return  valueArray;
+}
+
+//获得某一表中的所有数据
+- (NSArray *)newGetAllModelWithTableName:(NSString *)name {
+    YTKKeyValueStore *manager = [[YTKKeyValueStore alloc]initDBWithName:@"TEST.db"];
+    [manager createTableWithName:name];
+    return   [manager getAllItemsFromTable:name];
+}
+
+
+
 
 - (id)init{
     if(self = [super init]){
@@ -42,6 +85,8 @@
     }
     return self;
 }
+
+
 - (void)insertAModel:(JJBaseModel *)model {
     if([_db open])
     {
@@ -51,7 +96,7 @@
             BOOL isUpdate = [_db executeUpdate:@"update JJBaseModel set menuNum = menuNum +1 where titleName =?",model.titleName];
             NSLog(@"12%@",isUpdate? @"成功":@"失败");
         }else {
-         BOOL isUpdate = [_db executeUpdate:@"insert into JJBaseModel (menuNum,titleName,imageName) values (?,?,?)",[NSNumber numberWithInt:model.menuNum], model.titleName,model.imageName];
+            BOOL isUpdate = [_db executeUpdate:@"insert into JJBaseModel (menuNum,titleName,imageName) values (?,?,?)",[NSNumber numberWithInt:model.menuNum], model.titleName,model.imageName];
             NSLog(@"首次插入数据%@",isUpdate? @"成功":@"失败");
             
         }
@@ -80,8 +125,7 @@
         [_db close];
         NSLog(@"------***%d",(int)array.count);
         return array;
-    }else
-    {
+    }else {
         [_db close];
         return nil;
     }

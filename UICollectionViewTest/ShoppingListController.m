@@ -8,13 +8,13 @@
 
 #import "ShoppingListController.h"
 #import "JJBaseCell.h"
+#import <MJExtension.h>
 
 @interface ShoppingListController ()<UITableViewDataSource,UITableViewDelegate,UIAlertViewDelegate,UIGestureRecognizerDelegate>
 {
     CGFloat _cellHeight;
     NSIndexPath *_longPressIndexPath;
 }
-@property (nonatomic,strong)NSMutableArray *dataArray;
 @property (nonatomic,strong)UITableView *tableView;
 @property (nonatomic,strong)NSMutableArray *deleteArray;
 
@@ -35,43 +35,46 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.automaticallyAdjustsScrollViewInsets = NO;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        self.dataArray = [[NSMutableArray alloc]initWithArray:[[DBTool sharedDBTool]getAllModel]];
+    });
+  
+
+                          
+    
+    _tableView  = [[UITableView alloc]initWithFrame:CGRectMake(0, fNavBarHeigth+1, fDeviceWidth, fDeviceHeight-fNavBarHeigth-60-1) style:UITableViewStylePlain];
+    _tableView.delegate   = self;
+    _tableView.dataSource = self;
+    _tableView.rowHeight  = _cellHeight;
+    _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    [self.view addSubview:_tableView];
+    
     [self initUI];
     [self setUpDeleteBtn];
     [self.view addSubview:[self navCustomView]];
+    [self.tableView reloadData];
+    NSLog(@"------%@",[NSThread currentThread]);
     
+
 }
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+}
+
 
 - (void)initUI{
     [self.nameLabel setHidden:YES];
     self.titleLabel.text = @"ShoppingList";
     [self.navCustomView addSubview:self.titleLabel];
-    _dataArray = [[NSMutableArray alloc]initWithArray:[[DBTool sharedDBTool]getAllModel]];
-    
     UISwipeGestureRecognizer *swipeGesture = [[UISwipeGestureRecognizer alloc]initWithTarget:self action:@selector(backToLastItem)];
     swipeGesture.delegate = self;
     [self.view addGestureRecognizer:swipeGesture];
-    [self.view addSubview:[self tableView]];
-    [self.tableView reloadData];
+    
 }
 
 - (void)backToLastItem {
     [self.navigationController popViewControllerAnimated:YES];
 }
-
-
-
-- (UITableView *)tableView{
-    if(!_tableView){
-        _tableView  =[ [UITableView alloc]initWithFrame:CGRectMake(0, fNavBarHeigth+1, fDeviceWidth, fDeviceHeight-fNavBarHeigth-60-1) style:UITableViewStylePlain];
-        _tableView.delegate = self;
-        _tableView.dataSource = self;
-        _tableView.rowHeight = _cellHeight;
-        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    }
-    return _tableView;
-}
-
-
 
 - (void)setUpDeleteBtn{
     UIButton *selectedBtn = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -83,9 +86,9 @@
     [selectedBtn addTarget:self action:@selector(selectedBtn:) forControlEvents:UIControlEventTouchUpInside];
     [self.navCustomView addSubview:selectedBtn];
     
-//    UIBarButtonItem *selectItem = [[UIBarButtonItem alloc] initWithCustomView:selectedBtn];
-//    
-//    self.navigationItem.rightBarButtonItem =selectItem;
+    //    UIBarButtonItem *selectItem = [[UIBarButtonItem alloc] initWithCustomView:selectedBtn];
+    //
+    //    self.navigationItem.rightBarButtonItem =selectItem;
     
     //   全选
     
@@ -98,9 +101,9 @@
     [_seletcAllBtn addTarget:self action:@selector(selectAllBtnClick:) forControlEvents:UIControlEventTouchUpInside];
     [self.navCustomView addSubview:_seletcAllBtn];
     
-//    UIBarButtonItem *leftItem = [[UIBarButtonItem alloc] initWithCustomView:_seletcAllBtn];
-//    
-//    self.navigationItem.leftBarButtonItem = leftItem;
+    //    UIBarButtonItem *leftItem = [[UIBarButtonItem alloc] initWithCustomView:_seletcAllBtn];
+    //
+    //    self.navigationItem.leftBarButtonItem = leftItem;
     
     _seletcAllBtn.hidden = YES;
     
@@ -126,7 +129,7 @@
     
     self.deleteArray = [[NSMutableArray alloc]initWithCapacity:0];
     
-    }
+}
 
 - (void)selectedBtn:(UIButton *)sender{
     //1.首先是这样选择按钮的响应事件,在按钮事件里面要有self.tableView.allowsMutipleSelectionDuringEditing = YES;允许支持同时选择多行
@@ -138,7 +141,7 @@
         [sender setTitle:@"完成" forState:UIControlStateNormal];
     }else{
         _seletcAllBtn.hidden = YES;
-        [sender setTitle:@"删除" forState:UIControlStateNormal];
+        [sender setTitle:@"选择" forState:UIControlStateNormal];
     }
     
 }
@@ -202,8 +205,8 @@
 //选择你要对表进行处理的方式,默认是删除方式
 - (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath{
     return UITableViewCellEditingStyleDelete ;
-//    | UITableViewCellEditingStyleInsert
-//    注意:当这一行代码加上时滑动删除就不起作用了
+    //    | UITableViewCellEditingStyleInsert
+    //    注意:当这一行代码加上时滑动删除就不起作用了
     
 }
 
@@ -229,6 +232,8 @@
 - (UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     JJBaseCell *cell = [JJBaseCell cellWithTableView:self.tableView];
     cell.baseModel = self.dataArray[indexPath.row];
+    NSArray *testArray = [NSArray arrayWithArray:[[DBTool sharedDBTool]newGetAllModelWithTableName:cell.baseModel.titleName]];
+    NSLog(@"testArray:::::%@",testArray);
     _cellHeight = cell.contentHeight;
     [self addLongPressGestureRecognizerInView:cell.contentView];
     
@@ -236,7 +241,7 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-    return _cellHeight;
+    return 84.5;
 }
 #pragma mark dataSourece and Delegate-------------------end
 
@@ -257,7 +262,7 @@
         if(_longPressIndexPath==nil){
             return;
         }else{
-             UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"提示" message:@"是否要删除当前的这一行数据" delegate:self cancelButtonTitle:@"否" otherButtonTitles:@"是" , nil];
+            UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"提示" message:@"是否要删除当前的这一行数据" delegate:self cancelButtonTitle:@"否" otherButtonTitles:@"是" , nil];
             alert.delegate = self;
             [alert show];
         }
@@ -276,7 +281,7 @@
         //长按删除后,其他行还是未编辑状态
         self.tableView.editing = NO;
         [self.tableView reloadData];
-
+        
     }else{
         return;
     }
@@ -284,7 +289,6 @@
 #pragma mark end------------------------
 - (void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
-    [self.tableView reloadData];
 }
 
 

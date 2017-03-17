@@ -11,7 +11,7 @@
 #import "JJBaseModel.h"
 #import "JJBaseScrllView.h"
 #import "JJItemDetailViewController.h"
-
+#import <MJExtension.h>
 
 @interface MainViewController ()<UICollectionViewDelegateFlowLayout,UICollectionViewDataSource,JJBaseScrllViewDelegate,UIAlertViewDelegate,JJBaseCollectionViewCellDelegate>
 {
@@ -147,6 +147,9 @@
 
 - (void)addGoodsToShoopingList:(JJBaseModel *)model {
     [[DBTool sharedDBTool]insertAModel:model];
+    
+    [[DBTool sharedDBTool]newInsertAModel:model];
+
 }
 #pragma mark --UICollectionViewDataSourcde
 //定义展示的UIConllectionViewCell的个数

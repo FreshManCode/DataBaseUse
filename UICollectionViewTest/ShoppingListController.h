@@ -9,6 +9,6 @@
 #import "JJItemDetailViewController.h"
 
 @interface ShoppingListController : JJItemDetailViewController
-
+@property (nonatomic,strong)NSMutableArray *dataArray;
 
 @end

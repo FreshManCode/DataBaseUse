@@ -100,11 +100,11 @@
     _baseModel = baseModel;
     self.nameLabel.text = baseModel.titleName;
     self.picture.image = [UIImage imageNamed:baseModel.imageName];
-    self.numAmount.text = [NSString stringWithFormat:@"%d",baseModel.menuNum];
+    self.numAmount.text = [NSString stringWithFormat:@"%d",baseModel.menuNum + 1];
 }
 
 - (void)awakeFromNib {
-    // Initialization code
+    [super awakeFromNib];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
